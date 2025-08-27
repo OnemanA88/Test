@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String
+  slug   String  @unique
+  active Boolean @default(true)
+  packs  Pack[]
+}
+
+model Pack {
+  id          Int        @id @default(autoincrement())
+  categoryId  Int
+  category    Category   @relation(fields: [categoryId], references: [id])
+  name        String
+  slug        String     @unique
+  description String
+  price       Int        // cents
+  images      String[]
+  weight      String?
+  volume      String?
+  stock       Int        @default(100)
+  active      Boolean    @default(true)
+  items       PackItem[]
+}
+
+model PackItem {
+  id          Int     @id @default(autoincrement())
+  packId      Int
+  pack        Pack    @relation(fields: [packId], references: [id])
+  brand       String
+  productName String
+  format      String
+  ingredients String
+  allergens   String
+  nutrition   String   // JSON string
+  qty         Int
+}
+
+model User {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  hash  String
+  role  String @default("customer")
+  orders   Order[]
+  addresses Address[]
+}
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  user      User   @relation(fields: [userId], references: [id])
+  type      String
+  line1     String
+  line2     String?
+  city      String
+  postal    String
+  country   String
+}
+
+model Order {
+  id        Int      @id @default(autoincrement())
+  customerId Int?
+  user      User?    @relation(fields: [customerId], references: [id])
+  total     Int
+  currency  String   @default("EUR")
+  status    String   @default("pending")
+  provider  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     OrderItem[]
+}
+
+model OrderItem {
+  id        Int   @id @default(autoincrement())
+  orderId   Int
+  order     Order @relation(fields: [orderId], references: [id])
+  packId    Int
+  qty       Int
+  unitPrice Int
+}
+
+model Coupon {
+  id      Int    @id @default(autoincrement())
+  code    String @unique
+  type    String
+  value   Int
+  active  Boolean @default(true)
+}
+
+model WebhookEvent {
+  id        Int      @id @default(autoincrement())
+  provider  String
+  signature String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
